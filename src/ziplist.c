@@ -307,6 +307,15 @@ address                                |                          |        |
 
 /*
  * 保存 ziplist 节点信息的结构
+ *
+ * ... |     prevrawlen     |      encoding      |       content       | ...
+ *      ^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^
+ *     ^          ^                      ^                    ^
+ *     |          |                      |                    |
+ *     p    prevrawlensize            lensize                len
+ *      (这个区域所需的字节数)  (这个区域所需的字节数)  (这个区域所需的字节数)
+ *
+ *    headersize = prevrawlensize + lensize
  */
 typedef struct zlentry {
 
@@ -931,6 +940,14 @@ static unsigned char *__ziplistCascadeUpdate(unsigned char *zl, unsigned char *p
             // | header | value |  ==>  | header |    | value |  ==>  | header      | value |
             //                                   |<-->|
             //                            为新 header 腾出的空间
+            //
+            //     |                p                         |                  next                    |
+            // ... | previous_entry_leng | encoding | content | previous_entry_leng | encoding | content |
+            //                                                  ^^^^^^^^^^^^^^^^^^^ 
+            //                                                           ^
+            //                                                           |
+            //                                                  next.prevrawlensize（这个区域所需的字节数）
+            //
             // T = O(N)
             memmove(np+rawlensize,
                 np+next.prevrawlensize,
