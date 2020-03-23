@@ -1092,6 +1092,7 @@ static unsigned char *__ziplistDelete(unsigned char *zl, unsigned char *p, unsig
  */
 static unsigned char *__ziplistInsert(unsigned char *zl, unsigned char *p, unsigned char *s, unsigned int slen) {
     // 记录当前 ziplist 的长度
+    // prevlen记录p前置结点长度，当没有前置结点时，这个值为0
     size_t curlen = intrev32ifbe(ZIPLIST_BYTES(zl)), reqlen, prevlen = 0;
     size_t offset;
     int nextdiff = 0;
@@ -1175,6 +1176,10 @@ static unsigned char *__ziplistInsert(unsigned char *zl, unsigned char *p, unsig
         /* Subtract one because of the ZIP_END bytes */
         // 移动现有元素，为新元素的插入空间腾出位置
         // T = O(N)
+        // 
+        // 考虑nextdiff = -4的情况，即p的prevrawlensize比原先缩小了，
+        // 因此下面memmove需要第二个参数p需要减nextdiff,
+        // 而第三个参数需要加nextdiff，统一處理了p需要扩展和缩小的情况。
         memmove(p+reqlen,p-nextdiff,curlen-offset-1+nextdiff);
 
         /* Encode this entry's raw length in the next entry. */
@@ -1297,6 +1302,7 @@ unsigned char *ziplistIndex(unsigned char *zl, int index) {
             entry = zipEntry(p);
             // T = O(N)
             while (entry.prevrawlen > 0 && index--) {
+                // 头结点的prevrawlen为0，因为已经没有前置结点
                 // 前移指针
                 p -= entry.prevrawlen;
                 // T = O(1)
@@ -1545,6 +1551,7 @@ unsigned int ziplistCompare(unsigned char *p, unsigned char *sstr, unsigned int 
  * Skip 'skip' entries between every comparison. 
  *
  * 每次比对之前都跳过 skip 个节点。
+ * 每对比一次都跳过 skip 个节点。
  *
  * Returns NULL when the field could not be found. 
  *
