@@ -193,7 +193,7 @@ int zslRandomLevel(void) {
  * 
  * 函数的返回值为新节点。
  *
- * T_wrost = O(N^2), T_avg = O(N log N)
+ * T_wrost = O(N), T_avg = O(log N)
  */
 zskiplistNode *zslInsert(zskiplist *zsl, double score, robj *obj) {
     zskiplistNode *update[ZSKIPLIST_MAXLEVEL], *x;
@@ -203,7 +203,7 @@ zskiplistNode *zslInsert(zskiplist *zsl, double score, robj *obj) {
     redisAssert(!isnan(score));
 
     // 在各个层查找节点的插入位置
-    // T_wrost = O(N^2), T_avg = O(N log N)
+    // T_wrost = O(N), T_avg = O(log N)
     x = zsl->header;
     for (i = zsl->level-1; i >= 0; i--) {
 
@@ -216,7 +216,7 @@ zskiplistNode *zslInsert(zskiplist *zsl, double score, robj *obj) {
         rank[i] = i == (zsl->level-1) ? 0 : rank[i+1];
 
         // 沿着前进指针遍历跳跃表
-        // T_wrost = O(N^2), T_avg = O(N log N)
+        // T_wrost = O(N), T_avg = O(log N)
         while (x->level[i].forward &&
             (x->level[i].forward->score < score ||
                 // 比对分值
@@ -347,14 +347,14 @@ void zslDeleteNode(zskiplist *zsl, zskiplistNode *x, zskiplistNode **update) {
  *
  * 从跳跃表 zsl 中删除包含给定节点 score 并且带有指定对象 obj 的节点。
  *
- * T_wrost = O(N^2), T_avg = O(N log N)
+ * T_wrost = O(N), T_avg = O(log N)
  */
 int zslDelete(zskiplist *zsl, double score, robj *obj) {
     zskiplistNode *update[ZSKIPLIST_MAXLEVEL], *x;
     int i;
 
     // 遍历跳跃表，查找目标节点，并记录所有沿途节点
-    // T_wrost = O(N^2), T_avg = O(N log N)
+    // T_wrost = O(N), T_avg = O(log N)
     x = zsl->header;
     for (i = zsl->level-1; i >= 0; i--) {
 
